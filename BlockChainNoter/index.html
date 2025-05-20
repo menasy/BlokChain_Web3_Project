@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<title>Blockchain Noter Uygulaması</title>
+
+	<style>
+		body {
+			font-family: Arial, sans-serif;
+			text-align: center;
+			margin: 0;
+			padding: 40px;
+			background-color: #f4f4f4;
+		}
+
+		h2 {
+			color: #333;
+		}
+
+		input[type="file"] {
+			margin: 10px auto;
+			display: block;
+		}
+
+		button {
+			margin: 10px auto;
+			padding: 10px 20px;
+			font-size: 16px;
+			background-color: #4CAF50;
+			border: none;
+			color: white;
+			cursor: pointer;
+			border-radius: 4px;
+		}
+
+		button:hover {
+			background-color: #45a049;
+		}
+
+		#result {
+			margin-top: 20px;
+			color: #333;
+			font-weight: bold;
+		}
+
+		.section {
+			background-color: white;
+			padding: 30px;
+			margin: 30px auto;
+			width: 60%;
+			border-radius: 10px;
+			box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
+		}
+	</style>
+</head>
+
+<body>
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.js"></script>
+
+	<div class="section">
+		<h2>Belge Kaydet</h2>
+		<input type="file" id="uploadInput" />
+		<button onclick="uploadHash()">Blockchain'e Kaydet</button>
+	</div>
+
+	<div class="section">
+		<h2>Belge Doğrula</h2>
+		<input type="file" id="verifyInput" />
+		<button onclick="verifyHash()">Blockchain'de Doğrula</button>
+	</div>
+	<p id="result"></p>
+
+<script src="functions.js"></script>
+</body>
+
+</html>
