@@ -11,18 +11,20 @@ contract DocumentNotary
     }
 
     mapping(bytes32 => Document) private documentsMap;
+    mapping(bytes32 => bool) private documentExists;
 
-    event DocumentStored(bytes32 indexed documentHash, uint256 timestamp); // emit tetiklediğinde loga kayıt düşer frontdan bu kaydı alacağım
 
-    function uploadDocument(bytes32 docHash) external 
-    {
-        require(documentsMap[docHash].timestamp == 0, "File is already exist !");
+
+   function uploadDocument(bytes32 docHash) external 
+   {
+        require(!documentExists[docHash], "Document is already exists !");
         documentsMap[docHash] = Document(docHash, block.timestamp);
-        emit DocumentStored(docHash, block.timestamp); // -> eventi tetikliyoruz burda 
+        documentExists[docHash] = true; 
     }
-
+   
     function verifyDocument(bytes32 docHash) external view returns (uint256 timestamp) 
     {
+        require(documentExists[docHash], "Document not found !");
         return documentsMap[docHash].timestamp;
     }
 }

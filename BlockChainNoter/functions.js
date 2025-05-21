@@ -1,15 +1,74 @@
-async function getFileHash(fileInputId) {
+const contractAdress = "0x5a23e1400c9eE557544C5B8247153422d51293E3";
+const contractABI = [
+	{
+
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "documentHash",
+						"type": "bytes32"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "timestamp",
+						"type": "uint256"
+					}
+				],
+				"name": "DocumentStored",
+				"type": "event"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "docHash",
+						"type": "bytes32"
+					}
+				],
+				"name": "uploadDocument",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "docHash",
+						"type": "bytes32"
+					}
+				],
+				"name": "verifyDocument",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "timestamp",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			}
+	];
+
+async function getFileHash(fileInputId) 
+{
 	const fileInput = document.getElementById(fileInputId);
 	const file = fileInput.files[0];
 
-	if (!file) {
+	if (!file) 
+	{
 		alert("Lütfen önce bir dosya seçin!");
 		throw new Error("Dosya seçilmedi!");
 	}
 
-	return new Promise((resolve, reject) => {
+	return new Promise((resolve, reject) => 
+	{
 		const reader = new FileReader();
-		reader.onload = (e) => {
+		reader.onload = (e) => 
+		{
 			const wordArray = CryptoJS.lib.WordArray.create(new Uint8Array(e.target.result)); // DÖNÜŞÜM ÖNEMLİ!
 			const hashHex = CryptoJS.SHA256(wordArray).toString(CryptoJS.enc.Hex);
 			resolve("0x" + hashHex);
@@ -19,63 +78,63 @@ async function getFileHash(fileInputId) {
 	});
 }
 
-async function createContract(needsSigner = false) {
-	if (typeof window.ethereum === 'undefined') {
-		alert("Lütfen Metamask'ı yükleyin ve sayfayı yeniden açın!");
-		throw new Error("Metamask bulunamadı (window.ethereum undefined)");
-	}
+async function createContract(needsSigner = false) 
+{
+
+	if (!window.ethereum) throw new Error("MetaMask yüklü değil!");
+	
 	const provider = new ethers.providers.Web3Provider(window.ethereum);
+	const network = await provider.getNetwork();
+	if (network.chainId !== 11155111) 
+	{
+		await window.ethereum.request({method: "wallet_switchEthereumChain", params: [{ chainId: "0xAA36A7" }]});
+	}
 	if (needsSigner) {
 		await provider.send("eth_requestAccounts", []);
 		const signer = provider.getSigner();
-		return new ethers.Contract(
-			"0x7b96aF9Bd211cBf6BA5b0dd53aa61Dc5806b6AcE",
-			["function uploadDocument(bytes32)", "function verifyDocument(bytes32) view returns (uint256)"],
-			signer
-		);
+		return new ethers.Contract(contractAdress,contractABI,signer);
 	}
-	return new ethers.Contract(
-		"0x7b96aF9Bd211cBf6BA5b0dd53aa61Dc5806b6AcE",
-		["function verifyDocument(bytes32) view returns (uint256)"],
-		provider
-	);
-}
-
+	return new ethers.Contract(contractAdress,contractABI,provider);
+} 
 
 async function uploadHash() {
-	try {
+	try 
+	{
 		const hash = await getFileHash("uploadInput");
-		console.log("Hash Upload: " + hash + "\n");
 		const contract = await createContract(true);
-		const tx = await contract.uploadDocument(hash); // transactionu alıyoruz.
-		await tx.wait(); // mined edilmesini bekletiyrum işlemin bloğa kaydedilmesi lazım.
-		console.log("TRANSACTİON: ", tx.hash + "\n");
-		document.getElementById("result").innerHTML = "Hash blockchain'e kaydedildi! ";
-	} catch (error) {
-		document.getElementById("result").innerHTML = `Hata: ${error.message}`;
+		const tx = await contract.uploadDocument(hash);
+		await tx.wait();
+		document.getElementById("result").innerHTML = `Belge başarıyla kaydedildi`;
+	} 
+	catch (error) 
+	{
+		let errorMessage = error.message;
+		if (error.code === 'ACTION_REJECTED') {
+			errorMessage = "İşlem iptal edildi !";
+		}
+		else if (error.code === 'UNPREDICTABLE_GAS_LIMIT') 
+		{
+			errorMessage = "Belge zaten kayıtlı !";
+		}
+		document.getElementById("result").innerHTML = `Hata: ${errorMessage}`;
 	}
 }
 
 async function verifyHash() {
-	try {
+	try 
+	{
 		const hash = await getFileHash("verifyInput");
-		console.log("Hash Verify: " + hash + "\n");
 		const contract = await createContract();
-		console.log("1---------------Create");
 		const timestamp = await contract.verifyDocument(hash);
-		console.log("2---------------Timstamp: " + timestamp);
-
-		if (timestamp > 0) {
-			const date = new Date(timestamp * 1000).toLocaleString();
-			document.getElementById("result").innerHTML = ` Belge doğrulandı!<br>Zaman Damgası: ${date}`;
-		} else {
-			document.getElementById("result").innerHTML = " Belge blockchain'de bulunamadı!";
+		const date = new Date(timestamp * 1000).toLocaleString();
+		document.getElementById("result").innerHTML = ` Belge doğrulandı !<br>Zaman Damgası: ${date}`;
+	} 
+	catch (error) 
+	{
+		if (error.message.includes("Document not found !")) {
+			document.getElementById("result").innerHTML = "Belge blockchain'de mevcut değil !";
 		}
-	} catch (error) {
-		console.error("Hata Detayları:", error);
-		if (error.code === "CALL_EXCEPTION") {
-			document.getElementById("result").innerHTML = "Belge blockchain'de bulunamadı!";
-		} else {
+		else {
 			document.getElementById("result").innerHTML = `Hata: ${error.message}`;
 		}
 	}
